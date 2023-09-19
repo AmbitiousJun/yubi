@@ -134,3 +134,108 @@ git commit -m "first init"
 git push origin main
 ```
 
+### 后端
+
+1. 拉取 springboot-init 初始化项目
+2. 创建示例数据库 my_db，跑通初始化项目
+3. 提交 git 后端初始化
+
+4. 设计数据库表
+
+**用户表**：
+
+```sql
+-- 用户表
+create table if not exists user
+(
+	id bigint auto_increment comment 'id' primary key,
+  userAccount varchar(256) not null comment '账号',
+  userPassword varchar(512) not null comment '密码',
+  userName varchar(256) null comment '用户昵称',
+  userAvatar varchar(1024) null comment '用户头像',
+  userRole varchar(256) default 'user' not null comment '用户角色：user/admin',
+  createTime datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+  updateTime datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+  isDelete tinyint default 0 not null comment '是否删除',
+  index idx_userAccount (userAccount)
+) comment '用户' collate = utf8mb4_unicode_ci;
+```
+
+**图表信息表**：
+
+```sql
+-- 图表信息表
+create table if not exists chart
+(
+	id bigint auto_increment comment 'id' primary key,
+  userId bigint null comment 'userId',
+  goal text null comment '分析目标',
+  chartData text null comment '图表数据',
+  chartType varchar(128) null comment '图表类型',
+  genChart text null comment '生成的图表数据',
+  genResult text null comment '生成的分析结论',
+  createTime datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+  updateTime datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+  isDelete tinyint default 0 not null comment '是否删除'
+) comment '图表信息' collate = utf8mb4_unicode_ci;
+```
+
+5. 修改项目中的 `create_table.sql`，粘贴以上的两段表结构代码，更改数据库名为 `yubi`，创建数据库
+
+![修改sql](https://ambitious-bucket1-1305921962.cos.ap-guangzhou.myqcloud.com/imgs/image-20230918163920332.png)
+
+6. 使用 MybatisX 插件生成增删改查代码
+7. 将生成的代码合并到项目中，解决冲突后尝试运行调通登录接口
+8. 为 Chart 实体准备增删改查 DTO 类
+
+![Chart的增删改查DTO类](https://ambitious-bucket1-1305921962.cos.ap-guangzhou.myqcloud.com/imgs/image-20230919114802662.png)
+
+9. 复制 PostController 模板，修改为 ChartController 模版，并进行适配
+10. 启动服务，测试添加图表和查询图表功能是否正常
+
+### 前端对接后端增删改查接口
+
+快捷工具：使用 openAPI，配合后端的 Swagger Json 接口，快速生成接口请求代码。
+
+1. 获取后端 Swagger Json 接口
+
+```text
+http://localhost:8101/api/v2/api-docs
+```
+
+2. 在前端项目中，进入到 `config/config.ts` 文件中，找到 openAPI 的配置，并进行修改：
+
+```json
+/**
+ * @name openAPI 插件的配置
+ * @description 基于 openapi 的规范生成serve 和mock，能减少很多样板代码
+ * @doc https://pro.ant.design/zh-cn/docs/openapi/
+ */
+openAPI: [
+  {
+    requestLibPath: "import { request } from '@umijs/max'",
+    projectName: "yubi",
+    schemaPath: "http://localhost:8101/api/v2/api-docs",
+    // schemaPath: join(__dirname, 'oneapi.json'),
+    mock: false,
+  },
+  // {
+  //   requestLibPath: "import { request } from '@umijs/max'",
+  //   schemaPath: 'https://gw.alipayobjects.com/os/antfincdn/CA1dOm%2631B/openapi.json',
+  //   projectName: 'swagger',
+  // },
+]
+```
+
+3. 在终端中运行 `yarn openapi` 生成接口代码
+
+![使用openapi命令生成接口代码](https://ambitious-bucket1-1305921962.cos.ap-guangzhou.myqcloud.com/imgs/image-20230919155112010.png)
+
+4. 在 `src/app.ts` 文件下，修改 request 对象的配置，添加 `baseURL` 参数
+
+5. 在页面中的任意文件中调用接口，验证连通性
+
+![验证前端对接后端接口是否成功](https://ambitious-bucket1-1305921962.cos.ap-guangzhou.myqcloud.com/imgs/image-20230919155534272.png)
+
+
+
